@@ -3,17 +3,35 @@
 
     function overrideXHR() {
         var xhr = new originalXHR();
+        var requestUrl;
 
-        var originalSend = xhr.send;
-        xhr.send = function(...args) {
-            console.log("XHR request sent:", args);
-            return originalSend.apply(xhr, args);
+        var originalOpen = xhr.open;
+        xhr.open = function(method, url, async, user, password) {
+            requestUrl = url; 
+            console.log("XHR request opened:", method, url); 
+            return originalOpen.apply(xhr, arguments);
         };
 
+        var originalOnReadyStateChange = xhr.onreadystatechange;
         xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                console.log("XHR request completed:", xhr);
+            if (originalOnReadyStateChange) {
+                originalOnReadyStateChange.apply(xhr, arguments);
             }
+            if (xhr.readyState === 4) {
+                console.log("XHR request completed for URL:", requestUrl, xhr);
+            }
+        };
+
+        xhr.onerror = function() {
+            console.log("XHR request error for URL:", requestUrl, xhr);
+        };
+
+        xhr.ontimeout = function() {
+            console.log("XHR request timeout for URL:", requestUrl, xhr);
+        };
+
+        xhr.onabort = function() {
+            console.log("XHR request aborted for URL:", requestUrl, xhr);
         };
 
         return xhr;
